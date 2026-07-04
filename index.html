@@ -9,21 +9,24 @@
 <body>
   <main class="container">
     <header class="header">
-      <h1>Investment Calculator</h1>
-      <p class="subtitle">Project your portfolio growth with monthly contributions</p>
+      <div class="header-row">
+        <div class="header-text">
+          <h1>Investment Calculator</h1>
+          <p class="subtitle">Project your portfolio growth with monthly contributions</p>
+        </div>
+        <div class="header-currency">
+          <span id="currencyLabel" class="currency-label">Currency</span>
+          <div class="currency-switcher" role="radiogroup" aria-labelledby="currencyLabel">
+            <button type="button" class="currency-option" data-currency="PLN" role="radio" aria-checked="false">PLN</button>
+            <button type="button" class="currency-option is-active" data-currency="EUR" role="radio" aria-checked="true">EUR</button>
+            <button type="button" class="currency-option" data-currency="USD" role="radio" aria-checked="false">USD</button>
+          </div>
+        </div>
+      </div>
     </header>
 
     <div class="layout">
     <section class="card controls" aria-label="Investment parameters">
-      <div class="control-group">
-        <label id="currencyLabel">Currency</label>
-        <div class="currency-switcher" role="radiogroup" aria-labelledby="currencyLabel">
-          <button type="button" class="currency-option" data-currency="PLN" role="radio" aria-checked="false">PLN</button>
-          <button type="button" class="currency-option is-active" data-currency="EUR" role="radio" aria-checked="true">EUR</button>
-          <button type="button" class="currency-option" data-currency="USD" role="radio" aria-checked="false">USD</button>
-        </div>
-      </div>
-
       <div class="control-group">
         <label for="startDate">Start date</label>
         <input type="date" id="startDate" name="startDate">

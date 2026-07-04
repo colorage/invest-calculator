@@ -68,6 +68,8 @@ const chartCanvas = document.getElementById("balanceChart");
 
 let balanceChart = null;
 let selectedCurrency = "EUR";
+let lastProjection = null;
+let lastActualTrack = null;
 
 const STORAGE_KEY = "investCalculatorSettings";
 
@@ -344,6 +346,89 @@ function showPlaceholder(show) {
   chartWrapper.classList.toggle("hidden", show);
 }
 
+function destroyChart() {
+  if (!balanceChart) return;
+  balanceChart.destroy();
+  balanceChart = null;
+}
+
+function getChartOptions() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: "index",
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        display: true,
+        labels: {
+          usePointStyle: true,
+          boxWidth: 8,
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label(context) {
+            if (context.parsed.y === null) {
+              return null;
+            }
+
+            const monthlyIncome = context.dataset.monthlyIncomes?.[context.dataIndex];
+            const lines = [`${context.dataset.label}: ${formatCurrencyDetailed(context.parsed.y)}`];
+
+            if (monthlyIncome !== null && monthlyIncome !== undefined) {
+              lines.push(`Monthly income: ${formatCurrencyDetailed(monthlyIncome)}`);
+            }
+
+            return lines;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          maxTicksLimit: 12,
+          maxRotation: 0,
+        },
+        grid: {
+          display: false,
+        },
+      },
+      y: {
+        ticks: {
+          callback(value) {
+            return formatCompactCurrency(value);
+          },
+        },
+      },
+    },
+  };
+}
+
+function getPlanSegmentStyle() {
+  return {
+    borderColor(ctx) {
+      const endMonth = ctx.dataset?.investPeriodEndMonth;
+      if (endMonth == null) {
+        return PLAN_COLOR;
+      }
+      return ctx.p0DataIndex < endMonth - 1 ? PLAN_COLOR : "#16a34a";
+    },
+    backgroundColor(ctx) {
+      const endMonth = ctx.dataset?.investPeriodEndMonth;
+      if (endMonth == null) {
+        return "rgba(37, 99, 235, 0.1)";
+      }
+      return ctx.p0DataIndex < endMonth - 1
+        ? "rgba(37, 99, 235, 0.1)"
+        : "rgba(22, 163, 74, 0.1)";
+    },
+  };
+}
+
 function buildChartDataset(label, data, monthlyIncomes, options = {}) {
   return {
     label,
@@ -360,7 +445,7 @@ function buildChartDataset(label, data, monthlyIncomes, options = {}) {
   };
 }
 
-function updateChart(projection, actualTrack) {
+function updateChart(projection, actualTrack, { forceRebuild = false } = {}) {
   const labels = projection.dataPoints.map((point) =>
     monthLabelFormatter.format(point.date)
   );
@@ -368,7 +453,7 @@ function updateChart(projection, actualTrack) {
   const planMonthlyIncomes = projection.dataPoints.map((point) => point.monthlyIncome);
   const investPeriodEndMonth = projection.investPeriodEndMonth;
 
-  if (balanceChart) {
+  if (balanceChart && !forceRebuild) {
     balanceChart.data.labels = labels;
     balanceChart.data.datasets[0].data = planValues;
     balanceChart.data.datasets[0].monthlyIncomes = planMonthlyIncomes;
@@ -377,9 +462,12 @@ function updateChart(projection, actualTrack) {
     balanceChart.data.datasets[1].monthlyIncomes = actualTrack.monthlyIncomesSolid;
     balanceChart.data.datasets[2].data = actualTrack.actualDashed;
     balanceChart.data.datasets[2].monthlyIncomes = actualTrack.monthlyIncomesDashed;
+    balanceChart.options = getChartOptions();
     balanceChart.update();
     return;
   }
+
+  destroyChart();
 
   balanceChart = new Chart(chartCanvas, {
     type: "line",
@@ -397,18 +485,7 @@ function updateChart(projection, actualTrack) {
           tension: 0.2,
           pointRadius: 0,
           pointHoverRadius: 4,
-          segment: {
-            borderColor(ctx) {
-              const endMonth = ctx.dataset.investPeriodEndMonth;
-              return ctx.p0DataIndex < endMonth - 1 ? PLAN_COLOR : "#16a34a";
-            },
-            backgroundColor(ctx) {
-              const endMonth = ctx.dataset.investPeriodEndMonth;
-              return ctx.p0DataIndex < endMonth - 1
-                ? "rgba(37, 99, 235, 0.1)"
-                : "rgba(22, 163, 74, 0.1)";
-            },
-          },
+          segment: getPlanSegmentStyle(),
         },
         buildChartDataset(
           "Your balance",
@@ -423,59 +500,7 @@ function updateChart(projection, actualTrack) {
         ),
       ],
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        mode: "index",
-        intersect: false,
-      },
-      plugins: {
-        legend: {
-          display: true,
-          labels: {
-            usePointStyle: true,
-            boxWidth: 8,
-          },
-        },
-        tooltip: {
-          callbacks: {
-            label(context) {
-              if (context.parsed.y === null) {
-                return null;
-              }
-
-              const monthlyIncome = context.dataset.monthlyIncomes[context.dataIndex];
-              const lines = [`${context.dataset.label}: ${formatCurrencyDetailed(context.parsed.y)}`];
-
-              if (monthlyIncome !== null && monthlyIncome !== undefined) {
-                lines.push(`Monthly income: ${formatCurrencyDetailed(monthlyIncome)}`);
-              }
-
-              return lines;
-            },
-          },
-        },
-      },
-      scales: {
-        x: {
-          ticks: {
-            maxTicksLimit: 12,
-            maxRotation: 0,
-          },
-          grid: {
-            display: false,
-          },
-        },
-        y: {
-          ticks: {
-            callback(value) {
-              return formatCompactCurrency(value);
-            },
-          },
-        },
-      },
-    },
+    options: getChartOptions(),
   });
 }
 
@@ -556,12 +581,31 @@ function saveToCache() {
   }
 }
 
+function handleCurrencyChange(currency) {
+  if (currency === getSelectedCurrency()) return;
+
+  setSelectedCurrency(currency);
+  updateReadouts();
+  saveToCache();
+
+  if (!lastProjection || !lastActualTrack) {
+    recalculate();
+    return;
+  }
+
+  updateChart(lastProjection, lastActualTrack, { forceRebuild: true });
+  updateSummary(lastProjection);
+}
+
 function recalculate() {
   updateReadouts();
   saveToCache();
 
   const params = getParams();
   if (!params) {
+    lastProjection = null;
+    lastActualTrack = null;
+    destroyChart();
     showPlaceholder(true);
     finalBalanceEl.textContent = "—";
     monthlyIncomeAfterInvestingEl.textContent = "—";
@@ -574,6 +618,8 @@ function recalculate() {
   showPlaceholder(false);
   const projection = calculateProjection(params);
   const actualTrack = calculateActualTrack(params);
+  lastProjection = projection;
+  lastActualTrack = actualTrack;
   updateChart(projection, actualTrack);
   updateSummary(projection);
 }
@@ -588,8 +634,7 @@ function setDefaultStartDate() {
 
 currencyOptions.forEach((option) => {
   option.addEventListener("click", () => {
-    setSelectedCurrency(option.dataset.currency);
-    recalculate();
+    handleCurrencyChange(option.dataset.currency);
   });
 });
 

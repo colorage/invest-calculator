@@ -9,20 +9,34 @@
 <body>
   <main class="container">
     <header class="header">
-      <h1>Investment Calculator</h1>
-      <p class="subtitle">Project your portfolio growth with monthly contributions</p>
+      <div class="header__text">
+        <h1>Investment Calculator</h1>
+        <p class="subtitle">Project your portfolio growth with monthly contributions</p>
+      </div>
+
+      <div class="currency-dropdown">
+        <label id="currencyLabel" class="visually-hidden">Currency</label>
+        <button
+          type="button"
+          class="currency-dropdown__trigger"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+          aria-labelledby="currencyLabel"
+        >
+          <span class="currency-dropdown__value">EUR</span>
+          <svg class="currency-dropdown__chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M3 4.5L6 7.5L9 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <ul class="currency-dropdown__menu" role="listbox" hidden>
+          <li class="currency-dropdown__option" role="option" data-currency="PLN">PLN</li>
+          <li class="currency-dropdown__option" role="option" data-currency="EUR" aria-selected="true">EUR</li>
+          <li class="currency-dropdown__option" role="option" data-currency="USD">USD</li>
+        </ul>
+      </div>
     </header>
 
     <div class="layout"><section class="card controls" aria-label="Investment parameters">
-      <div class="control-group">
-        <label id="currencyLabel">Currency</label>
-        <div class="currency-switcher" role="radiogroup" aria-labelledby="currencyLabel">
-          <button type="button" class="currency-option" data-currency="PLN" role="radio" aria-checked="false">PLN</button>
-          <button type="button" class="currency-option is-active" data-currency="EUR" role="radio" aria-checked="true">EUR</button>
-          <button type="button" class="currency-option" data-currency="USD" role="radio" aria-checked="false">USD</button>
-        </div>
-      </div>
-
       <div class="control-group">
         <label for="startDate">Start date</label>
         <input type="month" id="startDate" name="startDate">

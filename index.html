@@ -7,33 +7,38 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="page-top">
+    <div class="page-top__inner">
+      <div class="currency-control control-group">
+        <label id="currencyLabel" for="currencyTrigger">Currency</label>
+        <div class="currency-dropdown">
+          <button
+            type="button"
+            id="currencyTrigger"
+            class="currency-dropdown__trigger"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-labelledby="currencyLabel"
+          >
+            <span class="currency-dropdown__value">EUR</span>
+            <svg class="currency-dropdown__chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M3 4.5L6 7.5L9 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <ul class="currency-dropdown__menu" role="listbox" hidden>
+            <li class="currency-dropdown__option" role="option" data-currency="PLN">PLN</li>
+            <li class="currency-dropdown__option" role="option" data-currency="EUR" aria-selected="true">EUR</li>
+            <li class="currency-dropdown__option" role="option" data-currency="USD">USD</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <main class="container">
     <header class="header">
-      <div class="header__text">
-        <h1>Investment Calculator</h1>
-        <p class="subtitle">Project your portfolio growth with monthly contributions</p>
-      </div>
-
-      <div class="currency-dropdown">
-        <label id="currencyLabel" class="visually-hidden">Currency</label>
-        <button
-          type="button"
-          class="currency-dropdown__trigger"
-          aria-haspopup="listbox"
-          aria-expanded="false"
-          aria-labelledby="currencyLabel"
-        >
-          <span class="currency-dropdown__value">EUR</span>
-          <svg class="currency-dropdown__chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-            <path d="M3 4.5L6 7.5L9 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <ul class="currency-dropdown__menu" role="listbox" hidden>
-          <li class="currency-dropdown__option" role="option" data-currency="PLN">PLN</li>
-          <li class="currency-dropdown__option" role="option" data-currency="EUR" aria-selected="true">EUR</li>
-          <li class="currency-dropdown__option" role="option" data-currency="USD">USD</li>
-        </ul>
-      </div>
+      <h1>Investment Calculator</h1>
+      <p class="subtitle">Project your portfolio growth with monthly contributions</p>
     </header>
 
     <div class="layout"><section class="card controls" aria-label="Investment parameters">

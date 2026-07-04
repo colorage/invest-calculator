@@ -55,6 +55,7 @@ function buildYearLabels(dataPoints) {
 const PLAN_COLOR = "#2563eb";
 const ACTUAL_COLOR = "#dc2626";
 
+const currencyControl = document.querySelector(".currency-control");
 const currencyDropdown = document.querySelector(".currency-dropdown");
 const currencyTrigger = document.querySelector(".currency-dropdown__trigger");
 const currencyValue = document.querySelector(".currency-dropdown__value");
@@ -744,7 +745,7 @@ currencyOptions.forEach((option) => {
 });
 
 document.addEventListener("click", (event) => {
-  if (!currencyDropdown.contains(event.target)) {
+  if (!currencyControl.contains(event.target)) {
     closeCurrencyMenu();
   }
 });

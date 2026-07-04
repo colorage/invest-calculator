@@ -1,9 +1,9 @@
 const CURRENCIES = ["PLN", "EUR", "USD"];
 
 const currencyConfig = {
-  PLN: { locale: "pl-PL" },
-  EUR: { locale: "de-DE" },
-  USD: { locale: "en-US" },
+  PLN: { locale: "pl-PL", monthlyBudgetMax: 25000 },
+  EUR: { locale: "de-DE", monthlyBudgetMax: 10000 },
+  USD: { locale: "en-US", monthlyBudgetMax: 10000 },
 };
 
 const formatterCache = {};
@@ -95,6 +95,18 @@ function setSelectedCurrency(currency) {
     option.classList.toggle("is-active", isActive);
     option.setAttribute("aria-checked", String(isActive));
   });
+
+  applyMonthlyBudgetRange(currency);
+}
+
+function applyMonthlyBudgetRange(currency) {
+  const { monthlyBudgetMax } = currencyConfig[currency];
+  monthlyBudgetInput.max = String(monthlyBudgetMax);
+
+  const clamped = clampToInput(monthlyBudgetInput.value, monthlyBudgetInput);
+  if (clamped !== null) {
+    monthlyBudgetInput.value = String(clamped);
+  }
 }
 
 function formatCurrency(value) {
@@ -654,6 +666,8 @@ currencyOptions.forEach((option) => {
 if (!loadFromCache() || !startDateInput.value) {
   setDefaultStartDate();
 }
+
+applyMonthlyBudgetRange(getSelectedCurrency());
 
 inputFields.forEach(({ input }) => input.addEventListener("input", recalculate));
 recalculate();

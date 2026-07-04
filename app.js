@@ -55,8 +55,11 @@ function buildYearLabels(dataPoints) {
 const PLAN_COLOR = "#2563eb";
 const ACTUAL_COLOR = "#dc2626";
 
-const currencySwitcher = document.querySelector(".currency-switcher");
-const currencyOptions = [...document.querySelectorAll(".currency-option")];
+const currencyDropdown = document.querySelector(".currency-dropdown");
+const currencyTrigger = document.querySelector(".currency-dropdown__trigger");
+const currencyValue = document.querySelector(".currency-dropdown__value");
+const currencyMenu = document.querySelector(".currency-dropdown__menu");
+const currencyOptions = [...document.querySelectorAll(".currency-dropdown__option")];
 
 const startDateInput = document.getElementById("startDate");
 const currentBalanceInput = document.getElementById("currentBalance");
@@ -105,13 +108,31 @@ function setSelectedCurrency(currency) {
   if (!CURRENCIES.includes(currency)) return;
   selectedCurrency = currency;
 
+  currencyValue.textContent = currency;
   currencyOptions.forEach((option) => {
-    const isActive = option.dataset.currency === currency;
-    option.classList.toggle("is-active", isActive);
-    option.setAttribute("aria-checked", String(isActive));
+    const isSelected = option.dataset.currency === currency;
+    option.setAttribute("aria-selected", String(isSelected));
   });
 
   applyMonthlyBudgetRange(currency);
+}
+
+function openCurrencyMenu() {
+  currencyMenu.hidden = false;
+  currencyTrigger.setAttribute("aria-expanded", "true");
+}
+
+function closeCurrencyMenu() {
+  currencyMenu.hidden = true;
+  currencyTrigger.setAttribute("aria-expanded", "false");
+}
+
+function toggleCurrencyMenu() {
+  if (currencyMenu.hidden) {
+    openCurrencyMenu();
+  } else {
+    closeCurrencyMenu();
+  }
 }
 
 function applyMonthlyBudgetRange(currency) {
@@ -711,10 +732,27 @@ function setDefaultStartDate() {
   startDateInput.value = `${year}-${month}`;
 }
 
+currencyTrigger.addEventListener("click", () => {
+  toggleCurrencyMenu();
+});
+
 currencyOptions.forEach((option) => {
   option.addEventListener("click", () => {
     handleCurrencyChange(option.dataset.currency);
+    closeCurrencyMenu();
   });
+});
+
+document.addEventListener("click", (event) => {
+  if (!currencyDropdown.contains(event.target)) {
+    closeCurrencyMenu();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeCurrencyMenu();
+  }
 });
 
 if (!loadFromCache() || !startDateInput.value) {

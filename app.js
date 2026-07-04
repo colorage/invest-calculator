@@ -52,6 +52,7 @@ const yearlyTaxValue = document.getElementById("yearlyTaxValue");
 const yearsToInvestValue = document.getElementById("yearsToInvestValue");
 
 const finalBalanceEl = document.getElementById("finalBalance");
+const monthlyIncomeAfterInvestingEl = document.getElementById("monthlyIncomeAfterInvesting");
 const totalContributedEl = document.getElementById("totalContributed");
 const totalTaxPaidEl = document.getElementById("totalTaxPaid");
 const netGainEl = document.getElementById("netGain");
@@ -163,12 +164,47 @@ function calculateProjection(params) {
     }
   }
 
+  const investPeriodEndMonth = totalMonths;
+  const finalBalance = balance;
+  const totalTaxPaidAtEnd = totalTaxPaid;
+  let postInvestmentMonthlyIncome = 0;
+  const postInvestMonths = years * 12;
+
+  for (let month = 0; month < postInvestMonths; month += 1) {
+    balance *= 1 + monthlyGrowthRate;
+
+    const pointDate = addMonths(startDate, totalMonths + month);
+    const monthlyIncome = balance * monthlyGrowthRate;
+    if (month === 0) {
+      postInvestmentMonthlyIncome = monthlyIncome;
+    }
+    dataPoints.push({
+      date: pointDate,
+      balance,
+      monthlyIncome,
+    });
+
+    if ((month + 1) % 12 === 0) {
+      const gains = balance - yearStartBalance;
+      if (gains > 0) {
+        const tax = gains * taxRate;
+        balance -= tax;
+        const lastPoint = dataPoints[dataPoints.length - 1];
+        lastPoint.balance = balance;
+        lastPoint.monthlyIncome = balance * monthlyGrowthRate;
+      }
+      yearStartBalance = balance;
+    }
+  }
+
   return {
     dataPoints,
-    finalBalance: balance,
+    finalBalance,
     totalContributions,
-    totalTaxPaid,
-    netGain: balance - totalContributions,
+    totalTaxPaid: totalTaxPaidAtEnd,
+    netGain: finalBalance - totalContributions,
+    postInvestmentMonthlyIncome,
+    investPeriodEndMonth,
   };
 }
 
@@ -208,11 +244,13 @@ function updateChart(projection) {
   );
   const values = projection.dataPoints.map((point) => point.balance);
   const monthlyIncomes = projection.dataPoints.map((point) => point.monthlyIncome);
+  const investPeriodEndMonth = projection.investPeriodEndMonth;
 
   if (balanceChart) {
     balanceChart.data.labels = labels;
     balanceChart.data.datasets[0].data = values;
     balanceChart.data.datasets[0].monthlyIncomes = monthlyIncomes;
+    balanceChart.data.datasets[0].investPeriodEndMonth = investPeriodEndMonth;
     balanceChart.update();
     return;
   }
@@ -226,12 +264,25 @@ function updateChart(projection) {
           label: "Projected balance",
           data: values,
           monthlyIncomes,
+          investPeriodEndMonth,
           borderColor: "#2563eb",
           backgroundColor: "rgba(37, 99, 235, 0.1)",
           fill: true,
           tension: 0.2,
           pointRadius: 0,
           pointHoverRadius: 4,
+          segment: {
+            borderColor(ctx) {
+              const endMonth = ctx.dataset.investPeriodEndMonth;
+              return ctx.p0DataIndex < endMonth - 1 ? "#2563eb" : "#16a34a";
+            },
+            backgroundColor(ctx) {
+              const endMonth = ctx.dataset.investPeriodEndMonth;
+              return ctx.p0DataIndex < endMonth - 1
+                ? "rgba(37, 99, 235, 0.1)"
+                : "rgba(22, 163, 74, 0.1)";
+            },
+          },
         },
       ],
     },
@@ -282,6 +333,9 @@ function updateChart(projection) {
 
 function updateSummary(projection) {
   finalBalanceEl.textContent = formatCurrencyDetailed(projection.finalBalance);
+  monthlyIncomeAfterInvestingEl.textContent = formatCurrencyDetailed(
+    projection.postInvestmentMonthlyIncome
+  );
   totalContributedEl.textContent = formatCurrencyDetailed(projection.totalContributions);
   totalTaxPaidEl.textContent = formatCurrencyDetailed(projection.totalTaxPaid);
   netGainEl.textContent = formatCurrencyDetailed(projection.netGain);
@@ -362,6 +416,7 @@ function recalculate() {
   if (!params) {
     showPlaceholder(true);
     finalBalanceEl.textContent = "—";
+    monthlyIncomeAfterInvestingEl.textContent = "—";
     totalContributedEl.textContent = "—";
     totalTaxPaidEl.textContent = "—";
     netGainEl.textContent = "—";

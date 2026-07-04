@@ -360,6 +360,18 @@ function buildChartDataset(label, data, monthlyIncomes, options = {}) {
   };
 }
 
+function padChartSeries(values, length) {
+  if (values.length >= length) {
+    return values;
+  }
+
+  return [...values, ...Array(length - values.length).fill(null)];
+}
+
+function getInvestPeriodEndMonth(ctx) {
+  return ctx.chart.data.datasets[ctx.datasetIndex]?.investPeriodEndMonth ?? Infinity;
+}
+
 function updateChart(projection, actualTrack) {
   const labels = projection.dataPoints.map((point) =>
     monthLabelFormatter.format(point.date)
@@ -367,16 +379,21 @@ function updateChart(projection, actualTrack) {
   const planValues = projection.dataPoints.map((point) => point.balance);
   const planMonthlyIncomes = projection.dataPoints.map((point) => point.monthlyIncome);
   const investPeriodEndMonth = projection.investPeriodEndMonth;
+  const chartLength = labels.length;
+  const actualSolid = padChartSeries(actualTrack.actualSolid, chartLength);
+  const actualDashed = padChartSeries(actualTrack.actualDashed, chartLength);
+  const monthlyIncomesSolid = padChartSeries(actualTrack.monthlyIncomesSolid, chartLength);
+  const monthlyIncomesDashed = padChartSeries(actualTrack.monthlyIncomesDashed, chartLength);
 
   if (balanceChart) {
     balanceChart.data.labels = labels;
     balanceChart.data.datasets[0].data = planValues;
     balanceChart.data.datasets[0].monthlyIncomes = planMonthlyIncomes;
     balanceChart.data.datasets[0].investPeriodEndMonth = investPeriodEndMonth;
-    balanceChart.data.datasets[1].data = actualTrack.actualSolid;
-    balanceChart.data.datasets[1].monthlyIncomes = actualTrack.monthlyIncomesSolid;
-    balanceChart.data.datasets[2].data = actualTrack.actualDashed;
-    balanceChart.data.datasets[2].monthlyIncomes = actualTrack.monthlyIncomesDashed;
+    balanceChart.data.datasets[1].data = actualSolid;
+    balanceChart.data.datasets[1].monthlyIncomes = monthlyIncomesSolid;
+    balanceChart.data.datasets[2].data = actualDashed;
+    balanceChart.data.datasets[2].monthlyIncomes = monthlyIncomesDashed;
     balanceChart.update();
     return;
   }
@@ -399,11 +416,11 @@ function updateChart(projection, actualTrack) {
           pointHoverRadius: 4,
           segment: {
             borderColor(ctx) {
-              const endMonth = ctx.dataset.investPeriodEndMonth;
+              const endMonth = getInvestPeriodEndMonth(ctx);
               return ctx.p0DataIndex < endMonth - 1 ? PLAN_COLOR : "#16a34a";
             },
             backgroundColor(ctx) {
-              const endMonth = ctx.dataset.investPeriodEndMonth;
+              const endMonth = getInvestPeriodEndMonth(ctx);
               return ctx.p0DataIndex < endMonth - 1
                 ? "rgba(37, 99, 235, 0.1)"
                 : "rgba(22, 163, 74, 0.1)";
@@ -412,13 +429,13 @@ function updateChart(projection, actualTrack) {
         },
         buildChartDataset(
           "Your balance",
-          actualTrack.actualSolid,
-          actualTrack.monthlyIncomesSolid
+          actualSolid,
+          monthlyIncomesSolid
         ),
         buildChartDataset(
           "Predicted balance",
-          actualTrack.actualDashed,
-          actualTrack.monthlyIncomesDashed,
+          actualDashed,
+          monthlyIncomesDashed,
           { borderDash: [6, 4] }
         ),
       ],

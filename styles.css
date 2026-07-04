@@ -211,8 +211,8 @@ input[type="range"]:focus {
   grid-template-columns: unset;
 }
 
-.summary--below-chart {
-  margin: 1.25rem 0 0;
+.summary--controls {
+  margin: 0;
 }
 
 .summary-item {

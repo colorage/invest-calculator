@@ -31,23 +31,13 @@ body {
 .container {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 1rem 1.25rem 3rem;
-}
-
-.page-top {
-  padding: 2rem 0 0;
-}
-
-.page-top__inner {
-  display: flex;
-  justify-content: flex-end;
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 0 1.25rem;
+  padding: 2rem 1.25rem 3rem;
 }
 
 .currency-control {
   width: 7.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .layout {
@@ -58,7 +48,16 @@ body {
 }
 
 .header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
   margin-bottom: 1.5rem;
+}
+
+.header__text {
+  flex: 1;
+  min-width: 0;
 }
 
 .header h1 {
@@ -359,19 +358,15 @@ input[type="range"]:focus {
 
 @media (max-width: 480px) {
   .container {
-    padding: 1rem 1rem 2rem;
-  }
-
-  .page-top {
-    padding-top: 1.25rem;
-  }
-
-  .page-top__inner {
-    padding: 0 1rem;
+    padding: 1.25rem 1rem 2rem;
   }
 
   .header h1 {
     font-size: 1.5rem;
+  }
+
+  .currency-control {
+    width: 6.5rem;
   }
 
   .summary:not(.summary--equation) {

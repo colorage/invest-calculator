@@ -32,10 +32,25 @@ function getCurrencySymbol(currency) {
   return parts.find((part) => part.type === "currency")?.value ?? currency;
 }
 
-const monthLabelFormatter = new Intl.DateTimeFormat("en", {
-  month: "short",
+const yearLabelFormatter = new Intl.DateTimeFormat("en", {
   year: "numeric",
 });
+
+function buildYearLabels(dataPoints) {
+  return dataPoints.map((point, index) => {
+    if (index === 0) {
+      return yearLabelFormatter.format(point.date);
+    }
+
+    const previousYear = dataPoints[index - 1].date.getFullYear();
+    const currentYear = point.date.getFullYear();
+    if (currentYear !== previousYear) {
+      return yearLabelFormatter.format(point.date);
+    }
+
+    return "";
+  });
+}
 
 const PLAN_COLOR = "#2563eb";
 const ACTUAL_COLOR = "#dc2626";
@@ -361,9 +376,7 @@ function buildChartDataset(label, data, monthlyIncomes, options = {}) {
 }
 
 function updateChart(projection, actualTrack) {
-  const labels = projection.dataPoints.map((point) =>
-    monthLabelFormatter.format(point.date)
-  );
+  const labels = buildYearLabels(projection.dataPoints);
   const planValues = projection.dataPoints.map((point) => point.balance);
   const planMonthlyIncomes = projection.dataPoints.map((point) => point.monthlyIncome);
   const investPeriodEndMonth = projection.investPeriodEndMonth;
@@ -462,6 +475,10 @@ function updateChart(projection, actualTrack) {
           ticks: {
             maxTicksLimit: 12,
             maxRotation: 0,
+            callback(value) {
+              const label = this.getLabelForValue(value);
+              return label || undefined;
+            },
           },
           grid: {
             display: false,

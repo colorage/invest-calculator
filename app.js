@@ -138,7 +138,7 @@ function formatCompactCurrency(value) {
     return `${symbol}${(value / 1_000_000).toFixed(1)}M`;
   }
   if (Math.abs(value) >= 1_000) {
-    return `${symbol}${(value / 1_000).toFixed(0)}k`;
+    return `${symbol}${(value / 1_000).toFixed(0)}K`;
   }
   return formatCurrency(value);
 }
@@ -432,10 +432,10 @@ function getChartOptions() {
             }
 
             const monthlyIncome = context.dataset.monthlyIncomes?.[context.dataIndex];
-            const lines = [`${context.dataset.label}: ${formatCurrencyDetailed(context.parsed.y)}`];
+            const lines = [`${context.dataset.label}: ${formatCompactCurrency(context.parsed.y)}`];
 
             if (monthlyIncome !== null && monthlyIncome !== undefined) {
-              lines.push(`Monthly income: ${formatCurrencyDetailed(monthlyIncome)}`);
+              lines.push(`Monthly income: ${formatCurrency(Math.round(monthlyIncome))}`);
             }
 
             return lines;
@@ -551,13 +551,13 @@ function updateChart(projection, actualTrack, { forceRebuild = false } = {}) {
 }
 
 function updateSummary(projection) {
-  finalBalanceEl.textContent = formatCurrencyDetailed(projection.finalBalance);
-  monthlyIncomeAfterInvestingEl.textContent = formatCurrencyDetailed(
-    projection.postInvestmentMonthlyIncome
+  finalBalanceEl.textContent = formatCompactCurrency(projection.finalBalance);
+  monthlyIncomeAfterInvestingEl.textContent = formatCurrency(
+    Math.round(projection.postInvestmentMonthlyIncome)
   );
-  totalContributedEl.textContent = formatCurrencyDetailed(projection.totalContributions);
-  totalTaxPaidEl.textContent = formatCurrencyDetailed(projection.totalTaxPaid);
-  netGainEl.textContent = formatCurrencyDetailed(projection.netGain);
+  totalContributedEl.textContent = formatCompactCurrency(projection.totalContributions);
+  totalTaxPaidEl.textContent = formatCompactCurrency(projection.totalTaxPaid);
+  netGainEl.textContent = formatCompactCurrency(projection.netGain);
 }
 
 function clampToInput(value, input) {

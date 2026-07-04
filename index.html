@@ -68,15 +68,8 @@
         <input type="range" id="yearsToInvest" min="1" max="40" step="1" value="10">
       </div>
     </section><section class="card output" aria-label="Projection results">
-      <div id="chartPlaceholder" class="chart-placeholder hidden" role="status">
-        Enter valid parameters to see your projection.
-      </div>
-      <div class="chart-wrapper">
-        <canvas id="balanceChart" aria-label="Projected balance over time"></canvas>
-      </div>
-
       <dl class="summary">
-        <div class="summary-item">
+        <div class="summary-item summary-item--final">
           <dt>Final balance</dt>
           <dd id="finalBalance">—</dd>
         </div>
@@ -88,15 +81,22 @@
           <dt>Total contributed</dt>
           <dd id="totalContributed">—</dd>
         </div>
-        <div class="summary-item">
+        <div class="summary-item summary-item--tax">
           <dt>Total tax paid</dt>
           <dd id="totalTaxPaid">—</dd>
         </div>
-        <div class="summary-item">
+        <div class="summary-item summary-item--gain">
           <dt>Net gain</dt>
           <dd id="netGain">—</dd>
         </div>
       </dl>
+
+      <div id="chartPlaceholder" class="chart-placeholder hidden" role="status">
+        Enter valid parameters to see your projection.
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="balanceChart" aria-label="Projected balance over time"></canvas>
+      </div>
     </section></div>
   </main>
 

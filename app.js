@@ -284,27 +284,29 @@ function calculateActualTrack(params) {
   const monthlyIncomesSolid = Array(totalMonths).fill(null);
   const monthlyIncomesDashed = Array(totalMonths).fill(null);
 
-  let state = createProjectionState(0);
-
   if (todayIndex >= 0) {
-    for (let month = 0; month < todayIndex; month += 1) {
-      state = applyMonthStep(state, month, monthlyBudget, monthlyGrowthRate, taxRate);
-      actualSolid[month] = state.balance;
-      monthlyIncomesSolid[month] = state.monthlyIncome;
+    const anchoredIncome = currentBalance * monthlyGrowthRate;
+
+    if (todayIndex === 0) {
+      actualSolid[0] = currentBalance;
+      monthlyIncomesSolid[0] = anchoredIncome;
+    } else {
+      for (let month = 0; month <= todayIndex; month += 1) {
+        const balance = (currentBalance * month) / todayIndex;
+        actualSolid[month] = balance;
+        monthlyIncomesSolid[month] = balance * monthlyGrowthRate;
+      }
     }
 
-    const anchoredIncome = currentBalance * monthlyGrowthRate;
-    actualSolid[todayIndex] = currentBalance;
-    monthlyIncomesSolid[todayIndex] = anchoredIncome;
     actualDashed[todayIndex] = currentBalance;
     monthlyIncomesDashed[todayIndex] = anchoredIncome;
   }
 
   const forwardStart = todayIndex >= 0 ? todayIndex + 1 : 0;
   let forwardState =
-    todayIndex > 0
-      ? { ...state, balance: currentBalance }
-      : createProjectionState(currentBalance);
+    todayIndex >= 0
+      ? createProjectionState(currentBalance)
+      : createProjectionState(0);
 
   for (let month = forwardStart; month < totalMonths; month += 1) {
     forwardState = applyMonthStep(

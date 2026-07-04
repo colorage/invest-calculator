@@ -219,6 +219,37 @@ function findTodayIndex(startDate, totalMonths) {
   return todayIndex;
 }
 
+function findAverageMonthlyBudget(
+  currentBalance,
+  monthsElapsed,
+  monthlyGrowthRate,
+  taxRate
+) {
+  if (monthsElapsed <= 0 || currentBalance <= 0) {
+    return 0;
+  }
+
+  let low = 0;
+  let high = currentBalance;
+
+  for (let iteration = 0; iteration < 60; iteration += 1) {
+    const mid = (low + high) / 2;
+    let state = createProjectionState(0);
+
+    for (let month = 0; month < monthsElapsed; month += 1) {
+      state = applyMonthStep(state, month, mid, monthlyGrowthRate, taxRate);
+    }
+
+    if (state.balance < currentBalance) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  return (low + high) / 2;
+}
+
 function calculateProjection(params) {
   const {
     startDate,
@@ -303,6 +334,16 @@ function calculateActualTrack(params) {
   }
 
   const forwardStart = todayIndex >= 0 ? todayIndex + 1 : 0;
+  const monthsElapsed = todayIndex >= 0 ? todayIndex + 1 : 0;
+  const predictedMonthlyBudget =
+    todayIndex >= 0
+      ? findAverageMonthlyBudget(
+          currentBalance,
+          monthsElapsed,
+          monthlyGrowthRate,
+          taxRate
+        )
+      : monthlyBudget;
   let forwardState =
     todayIndex >= 0
       ? createProjectionState(currentBalance)
@@ -312,7 +353,7 @@ function calculateActualTrack(params) {
     forwardState = applyMonthStep(
       forwardState,
       month,
-      monthlyBudget,
+      predictedMonthlyBudget,
       monthlyGrowthRate,
       taxRate
     );

@@ -28,9 +28,16 @@ body {
 }
 
 .container {
-  max-width: 720px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 2rem 1.25rem 3rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 1.5fr);
+  gap: 1.25rem;
+  align-items: start;
 }
 
 .header {
@@ -59,8 +66,8 @@ body {
   padding: 1.5rem;
 }
 
-.card + .card {
-  margin-top: 1.25rem;
+.layout > .card + .card {
+  margin-top: 0;
 }
 
 .controls {
@@ -176,6 +183,12 @@ input[type="range"]:focus {
   font-size: 1.125rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {

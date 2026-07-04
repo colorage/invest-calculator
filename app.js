@@ -219,37 +219,42 @@ function findTodayIndex(startDate, totalMonths) {
   return todayIndex;
 }
 
-function findAverageMonthlyBudget(
-  currentBalance,
-  monthsElapsed,
-  monthlyGrowthRate,
-  taxRate
-) {
-  if (monthsElapsed <= 0 || currentBalance <= 0) {
-    return 0;
-  }
+function calculateActualTrack(params) {
+  const {
+    startDate,
+    yearlyGrowthPercent,
+    years,
+    currentBalance,
+  } = params;
 
-  let low = 0;
-  let high = currentBalance;
+  const totalMonths = years * 12;
+  const monthlyGrowthRate = yearlyGrowthPercent / 100 / 12;
+  const todayIndex = findTodayIndex(startDate, totalMonths);
 
-  for (let iteration = 0; iteration < 60; iteration += 1) {
-    const mid = (low + high) / 2;
-    let state = createProjectionState(0);
+  const actualSolid = Array(totalMonths).fill(null);
+  const monthlyIncomesSolid = Array(totalMonths).fill(null);
 
-    for (let month = 0; month < monthsElapsed; month += 1) {
-      state = applyMonthStep(state, month, mid, monthlyGrowthRate, taxRate);
-    }
+  if (todayIndex >= 0) {
+    const anchoredIncome = currentBalance * monthlyGrowthRate;
 
-    if (state.balance < currentBalance) {
-      low = mid;
+    if (todayIndex === 0) {
+      actualSolid[0] = currentBalance;
+      monthlyIncomesSolid[0] = anchoredIncome;
     } else {
-      high = mid;
+      for (let month = 0; month <= todayIndex; month += 1) {
+        const balance = (currentBalance * month) / todayIndex;
+        actualSolid[month] = balance;
+        monthlyIncomesSolid[month] = balance * monthlyGrowthRate;
+      }
     }
   }
 
-  return (low + high) / 2;
+  return {
+    actualSolid,
+    monthlyIncomesSolid,
+    todayIndex,
+  };
 }
-
 function calculateProjection(params) {
   const {
     startDate,
@@ -292,81 +297,6 @@ function calculateProjection(params) {
     totalTaxPaid: totalTaxPaidAtEnd,
     netGain: finalBalance - totalContributions,
     postInvestmentMonthlyIncome,
-  };
-}
-
-function calculateActualTrack(params) {
-  const {
-    startDate,
-    monthlyBudget,
-    yearlyGrowthPercent,
-    yearlyTaxPercent,
-    years,
-    currentBalance,
-  } = params;
-
-  const totalMonths = years * 12;
-  const monthlyGrowthRate = yearlyGrowthPercent / 100 / 12;
-  const taxRate = yearlyTaxPercent / 100;
-  const todayIndex = findTodayIndex(startDate, totalMonths);
-
-  const actualSolid = Array(totalMonths).fill(null);
-  const actualDashed = Array(totalMonths).fill(null);
-  const monthlyIncomesSolid = Array(totalMonths).fill(null);
-  const monthlyIncomesDashed = Array(totalMonths).fill(null);
-
-  if (todayIndex >= 0) {
-    const anchoredIncome = currentBalance * monthlyGrowthRate;
-
-    if (todayIndex === 0) {
-      actualSolid[0] = currentBalance;
-      monthlyIncomesSolid[0] = anchoredIncome;
-    } else {
-      for (let month = 0; month <= todayIndex; month += 1) {
-        const balance = (currentBalance * month) / todayIndex;
-        actualSolid[month] = balance;
-        monthlyIncomesSolid[month] = balance * monthlyGrowthRate;
-      }
-    }
-
-    actualDashed[todayIndex] = currentBalance;
-    monthlyIncomesDashed[todayIndex] = anchoredIncome;
-  }
-
-  const forwardStart = todayIndex >= 0 ? todayIndex + 1 : 0;
-  const monthsElapsed = todayIndex >= 0 ? todayIndex + 1 : 0;
-  const predictedMonthlyBudget =
-    todayIndex >= 0
-      ? findAverageMonthlyBudget(
-          currentBalance,
-          monthsElapsed,
-          monthlyGrowthRate,
-          taxRate
-        )
-      : monthlyBudget;
-  let forwardState =
-    todayIndex >= 0
-      ? createProjectionState(currentBalance)
-      : createProjectionState(0);
-
-  for (let month = forwardStart; month < totalMonths; month += 1) {
-    forwardState = applyMonthStep(
-      forwardState,
-      month,
-      predictedMonthlyBudget,
-      monthlyGrowthRate,
-      taxRate
-    );
-    actualDashed[month] = forwardState.balance;
-    monthlyIncomesDashed[month] = forwardState.monthlyIncome;
-  }
-
-  return {
-    actualSolid,
-    actualDashed,
-    monthlyIncomesSolid,
-    monthlyIncomesDashed,
-    todayIndex,
   };
 }
 
@@ -494,9 +424,7 @@ function updateChart(projection, actualTrack, { forceRebuild = false } = {}) {
   const planMonthlyIncomes = projection.dataPoints.map((point) => point.monthlyIncome);
   const chartLength = labels.length;
   const actualSolid = padChartSeries(actualTrack.actualSolid, chartLength);
-  const actualDashed = padChartSeries(actualTrack.actualDashed, chartLength);
   const monthlyIncomesSolid = padChartSeries(actualTrack.monthlyIncomesSolid, chartLength);
-  const monthlyIncomesDashed = padChartSeries(actualTrack.monthlyIncomesDashed, chartLength);
 
   if (balanceChart && !forceRebuild) {
     balanceChart.data.labels = labels;
@@ -504,9 +432,7 @@ function updateChart(projection, actualTrack, { forceRebuild = false } = {}) {
     balanceChart.data.datasets[0].monthlyIncomes = planMonthlyIncomes;
     balanceChart.data.datasets[1].data = actualSolid;
     balanceChart.data.datasets[1].monthlyIncomes = monthlyIncomesSolid;
-    balanceChart.data.datasets[2].data = actualDashed;
-    balanceChart.data.datasets[2].monthlyIncomes = monthlyIncomesDashed;
-    balanceChart.options = getChartOptions();
+    balanceChart.options.plugins.legend.display = false;
     balanceChart.update();
     return;
   }
@@ -533,12 +459,6 @@ function updateChart(projection, actualTrack, { forceRebuild = false } = {}) {
           "Your balance",
           actualSolid,
           monthlyIncomesSolid
-        ),
-        buildChartDataset(
-          "Predicted balance",
-          actualDashed,
-          monthlyIncomesDashed,
-          { borderDash: [6, 4] }
         ),
       ],
     },

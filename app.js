@@ -246,26 +246,13 @@ function calculateProjection(params) {
     });
   }
 
-  const investPeriodEndMonth = totalMonths;
   const finalBalance = state.balance;
   const totalContributions = state.totalContributions;
   const totalTaxPaidAtEnd = state.totalTaxPaid;
   let postInvestmentMonthlyIncome = 0;
-  const postInvestMonths = years * 12;
 
-  for (let month = 0; month < postInvestMonths; month += 1) {
-    state = applyMonthStep(state, totalMonths + month, 0, monthlyGrowthRate, taxRate);
-
-    const pointDate = addMonths(startDate, totalMonths + month);
-    if (month === 0) {
-      postInvestmentMonthlyIncome = state.monthlyIncome;
-    }
-    dataPoints.push({
-      date: pointDate,
-      balance: state.balance,
-      monthlyIncome: state.monthlyIncome,
-    });
-  }
+  state = applyMonthStep(state, totalMonths, 0, monthlyGrowthRate, taxRate);
+  postInvestmentMonthlyIncome = state.monthlyIncome;
 
   return {
     dataPoints,
@@ -274,7 +261,6 @@ function calculateProjection(params) {
     totalTaxPaid: totalTaxPaidAtEnd,
     netGain: finalBalance - totalContributions,
     postInvestmentMonthlyIncome,
-    investPeriodEndMonth,
   };
 }
 
@@ -439,31 +425,6 @@ function getChartOptions() {
   };
 }
 
-function getInvestPeriodEndMonth(ctx) {
-  return ctx.chart.data.datasets[ctx.datasetIndex]?.investPeriodEndMonth ?? Infinity;
-}
-
-function getPlanSegmentStyle() {
-  return {
-    borderColor(ctx) {
-      const endMonth = getInvestPeriodEndMonth(ctx);
-      if (endMonth === Infinity) {
-        return PLAN_COLOR;
-      }
-      return ctx.p0DataIndex < endMonth - 1 ? PLAN_COLOR : "#16a34a";
-    },
-    backgroundColor(ctx) {
-      const endMonth = getInvestPeriodEndMonth(ctx);
-      if (endMonth === Infinity) {
-        return "rgba(37, 99, 235, 0.1)";
-      }
-      return ctx.p0DataIndex < endMonth - 1
-        ? "rgba(37, 99, 235, 0.1)"
-        : "rgba(22, 163, 74, 0.1)";
-    },
-  };
-}
-
 function buildChartDataset(label, data, monthlyIncomes, options = {}) {
   return {
     label,
@@ -492,7 +453,6 @@ function updateChart(projection, actualTrack, { forceRebuild = false } = {}) {
   const labels = buildYearLabels(projection.dataPoints);
   const planValues = projection.dataPoints.map((point) => point.balance);
   const planMonthlyIncomes = projection.dataPoints.map((point) => point.monthlyIncome);
-  const investPeriodEndMonth = projection.investPeriodEndMonth;
   const chartLength = labels.length;
   const actualSolid = padChartSeries(actualTrack.actualSolid, chartLength);
   const actualDashed = padChartSeries(actualTrack.actualDashed, chartLength);
@@ -503,7 +463,6 @@ function updateChart(projection, actualTrack, { forceRebuild = false } = {}) {
     balanceChart.data.labels = labels;
     balanceChart.data.datasets[0].data = planValues;
     balanceChart.data.datasets[0].monthlyIncomes = planMonthlyIncomes;
-    balanceChart.data.datasets[0].investPeriodEndMonth = investPeriodEndMonth;
     balanceChart.data.datasets[1].data = actualSolid;
     balanceChart.data.datasets[1].monthlyIncomes = monthlyIncomesSolid;
     balanceChart.data.datasets[2].data = actualDashed;
@@ -524,14 +483,12 @@ function updateChart(projection, actualTrack, { forceRebuild = false } = {}) {
           label: "Projected balance",
           data: planValues,
           monthlyIncomes: planMonthlyIncomes,
-          investPeriodEndMonth,
           borderColor: PLAN_COLOR,
           backgroundColor: "rgba(37, 99, 235, 0.1)",
           fill: true,
           tension: 0.2,
           pointRadius: 0,
           pointHoverRadius: 4,
-          segment: getPlanSegmentStyle(),
         },
         buildChartDataset(
           "Your balance",

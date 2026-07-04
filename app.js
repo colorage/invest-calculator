@@ -571,7 +571,7 @@ function updateChart(projection, actualTrack, { forceRebuild = false } = {}) {
 }
 
 function updateSummary(projection) {
-  finalBalanceEl.textContent = formatCompactCurrency(projection.finalBalance);
+  finalBalanceEl.textContent = formatCurrency(Math.round(projection.finalBalance));
   monthlyIncomeAfterInvestingEl.textContent = formatCurrency(
     Math.round(projection.postInvestmentMonthlyIncome)
   );

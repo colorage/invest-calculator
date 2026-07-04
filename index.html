@@ -13,7 +13,17 @@
       <p class="subtitle">Project your portfolio growth with monthly contributions</p>
     </header>
 
+    <div class="layout">
     <section class="card controls" aria-label="Investment parameters">
+      <div class="control-group">
+        <label id="currencyLabel">Currency</label>
+        <div class="currency-switcher" role="radiogroup" aria-labelledby="currencyLabel">
+          <button type="button" class="currency-option" data-currency="PLN" role="radio" aria-checked="false">PLN</button>
+          <button type="button" class="currency-option is-active" data-currency="EUR" role="radio" aria-checked="true">EUR</button>
+          <button type="button" class="currency-option" data-currency="USD" role="radio" aria-checked="false">USD</button>
+        </div>
+      </div>
+
       <div class="control-group">
         <label for="startDate">Start date</label>
         <input type="date" id="startDate" name="startDate">
@@ -74,6 +84,10 @@
           <dd id="finalBalance">—</dd>
         </div>
         <div class="summary-item">
+          <dt>Monthly income after investing</dt>
+          <dd id="monthlyIncomeAfterInvesting">—</dd>
+        </div>
+        <div class="summary-item">
           <dt>Total contributed</dt>
           <dd id="totalContributed">—</dd>
         </div>
@@ -87,6 +101,7 @@
         </div>
       </dl>
     </section>
+    </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>

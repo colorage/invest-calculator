@@ -29,9 +29,16 @@ body {
 }
 
 .container {
-  max-width: 720px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 2rem 1.25rem 3rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 1.5fr);
+  gap: 1.25rem;
+  align-items: start;
 }
 
 .header {
@@ -60,8 +67,8 @@ body {
   padding: 1.5rem;
 }
 
-.card + .card {
-  margin-top: 1.25rem;
+.layout > .card + .card {
+  margin-top: 0;
 }
 
 .controls {
@@ -122,6 +129,44 @@ input[type="range"]:focus {
   outline-offset: 4px;
 }
 
+.currency-switcher {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--summary-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.currency-option {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.currency-option:hover {
+  color: var(--text);
+}
+
+.currency-option:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.currency-option.is-active {
+  color: var(--accent);
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+}
+
 .chart-wrapper {
   position: relative;
   height: 320px;
@@ -150,7 +195,7 @@ input[type="range"]:focus {
 
 .summary {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1rem;
   margin: 1.25rem 0 0;
   padding: 1rem;
@@ -177,6 +222,12 @@ input[type="range"]:focus {
   font-size: 1.125rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {

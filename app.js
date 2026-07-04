@@ -1,14 +1,36 @@
-const eurFormatter = new Intl.NumberFormat("de-DE", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 0,
-});
+const CURRENCIES = ["PLN", "EUR", "USD"];
 
-const eurFormatterDetailed = new Intl.NumberFormat("de-DE", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 2,
-});
+const currencyConfig = {
+  PLN: { locale: "pl-PL" },
+  EUR: { locale: "de-DE" },
+  USD: { locale: "en-US" },
+};
+
+const formatterCache = {};
+
+function getFormatters(currency) {
+  if (!formatterCache[currency]) {
+    const { locale } = currencyConfig[currency];
+    formatterCache[currency] = {
+      whole: new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+      }),
+      detailed: new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 2,
+      }),
+    };
+  }
+  return formatterCache[currency];
+}
+
+function getCurrencySymbol(currency) {
+  const parts = getFormatters(currency).whole.formatToParts(0);
+  return parts.find((part) => part.type === "currency")?.value ?? currency;
+}
 
 const monthLabelFormatter = new Intl.DateTimeFormat("en", {
   month: "short",
@@ -17,6 +39,9 @@ const monthLabelFormatter = new Intl.DateTimeFormat("en", {
 
 const PLAN_COLOR = "#2563eb";
 const ACTUAL_COLOR = "#dc2626";
+
+const currencySwitcher = document.querySelector(".currency-switcher");
+const currencyOptions = [...document.querySelectorAll(".currency-option")];
 
 const startDateInput = document.getElementById("startDate");
 const currentBalanceInput = document.getElementById("currentBalance");
@@ -32,6 +57,7 @@ const yearlyTaxValue = document.getElementById("yearlyTaxValue");
 const yearsToInvestValue = document.getElementById("yearsToInvestValue");
 
 const finalBalanceEl = document.getElementById("finalBalance");
+const monthlyIncomeAfterInvestingEl = document.getElementById("monthlyIncomeAfterInvesting");
 const totalContributedEl = document.getElementById("totalContributed");
 const totalTaxPaidEl = document.getElementById("totalTaxPaid");
 const netGainEl = document.getElementById("netGain");
@@ -41,6 +67,7 @@ const chartWrapper = document.querySelector(".chart-wrapper");
 const chartCanvas = document.getElementById("balanceChart");
 
 let balanceChart = null;
+let selectedCurrency = "EUR";
 
 const STORAGE_KEY = "investCalculatorSettings";
 
@@ -53,22 +80,38 @@ const inputFields = [
   { key: "yearsToInvest", input: yearsToInvestInput, type: "number" },
 ];
 
-function formatEur(value) {
-  return eurFormatter.format(value);
+function getSelectedCurrency() {
+  return selectedCurrency;
 }
 
-function formatEurDetailed(value) {
-  return eurFormatterDetailed.format(value);
+function setSelectedCurrency(currency) {
+  if (!CURRENCIES.includes(currency)) return;
+  selectedCurrency = currency;
+
+  currencyOptions.forEach((option) => {
+    const isActive = option.dataset.currency === currency;
+    option.classList.toggle("is-active", isActive);
+    option.setAttribute("aria-checked", String(isActive));
+  });
 }
 
-function formatCompactEur(value) {
+function formatCurrency(value) {
+  return getFormatters(getSelectedCurrency()).whole.format(value);
+}
+
+function formatCurrencyDetailed(value) {
+  return getFormatters(getSelectedCurrency()).detailed.format(value);
+}
+
+function formatCompactCurrency(value) {
+  const symbol = getCurrencySymbol(getSelectedCurrency());
   if (Math.abs(value) >= 1_000_000) {
-    return `€${(value / 1_000_000).toFixed(1)}M`;
+    return `${symbol}${(value / 1_000_000).toFixed(1)}M`;
   }
   if (Math.abs(value) >= 1_000) {
-    return `€${(value / 1_000).toFixed(0)}k`;
+    return `${symbol}${(value / 1_000).toFixed(0)}k`;
   }
-  return formatEur(value);
+  return formatCurrency(value);
 }
 
 function addMonths(date, months) {
@@ -174,12 +217,35 @@ function calculateProjection(params) {
     });
   }
 
+  const investPeriodEndMonth = totalMonths;
+  const finalBalance = state.balance;
+  const totalContributions = state.totalContributions;
+  const totalTaxPaidAtEnd = state.totalTaxPaid;
+  let postInvestmentMonthlyIncome = 0;
+  const postInvestMonths = years * 12;
+
+  for (let month = 0; month < postInvestMonths; month += 1) {
+    state = applyMonthStep(state, totalMonths + month, 0, monthlyGrowthRate, taxRate);
+
+    const pointDate = addMonths(startDate, totalMonths + month);
+    if (month === 0) {
+      postInvestmentMonthlyIncome = state.monthlyIncome;
+    }
+    dataPoints.push({
+      date: pointDate,
+      balance: state.balance,
+      monthlyIncome: state.monthlyIncome,
+    });
+  }
+
   return {
     dataPoints,
-    finalBalance: state.balance,
-    totalContributions: state.totalContributions,
-    totalTaxPaid: state.totalTaxPaid,
-    netGain: state.balance - state.totalContributions,
+    finalBalance,
+    totalContributions,
+    totalTaxPaid: totalTaxPaidAtEnd,
+    netGain: finalBalance - totalContributions,
+    postInvestmentMonthlyIncome,
+    investPeriodEndMonth,
   };
 }
 
@@ -247,8 +313,8 @@ function calculateActualTrack(params) {
 }
 
 function updateReadouts() {
-  currentBalanceValue.textContent = formatEur(Number(currentBalanceInput.value));
-  monthlyBudgetValue.textContent = formatEur(Number(monthlyBudgetInput.value));
+  currentBalanceValue.textContent = formatCurrency(Number(currentBalanceInput.value));
+  monthlyBudgetValue.textContent = formatCurrency(Number(monthlyBudgetInput.value));
   yearlyGrowthValue.textContent = `${Number(yearlyGrowthInput.value).toFixed(1)}%`;
   yearlyTaxValue.textContent = `${Number(yearlyTaxInput.value)}%`;
   const years = Number(yearsToInvestInput.value);
@@ -300,11 +366,13 @@ function updateChart(projection, actualTrack) {
   );
   const planValues = projection.dataPoints.map((point) => point.balance);
   const planMonthlyIncomes = projection.dataPoints.map((point) => point.monthlyIncome);
+  const investPeriodEndMonth = projection.investPeriodEndMonth;
 
   if (balanceChart) {
     balanceChart.data.labels = labels;
     balanceChart.data.datasets[0].data = planValues;
     balanceChart.data.datasets[0].monthlyIncomes = planMonthlyIncomes;
+    balanceChart.data.datasets[0].investPeriodEndMonth = investPeriodEndMonth;
     balanceChart.data.datasets[1].data = actualTrack.actualSolid;
     balanceChart.data.datasets[1].monthlyIncomes = actualTrack.monthlyIncomesSolid;
     balanceChart.data.datasets[2].data = actualTrack.actualDashed;
@@ -322,12 +390,25 @@ function updateChart(projection, actualTrack) {
           label: "Projected balance",
           data: planValues,
           monthlyIncomes: planMonthlyIncomes,
+          investPeriodEndMonth,
           borderColor: PLAN_COLOR,
           backgroundColor: "rgba(37, 99, 235, 0.1)",
           fill: true,
           tension: 0.2,
           pointRadius: 0,
           pointHoverRadius: 4,
+          segment: {
+            borderColor(ctx) {
+              const endMonth = ctx.dataset.investPeriodEndMonth;
+              return ctx.p0DataIndex < endMonth - 1 ? PLAN_COLOR : "#16a34a";
+            },
+            backgroundColor(ctx) {
+              const endMonth = ctx.dataset.investPeriodEndMonth;
+              return ctx.p0DataIndex < endMonth - 1
+                ? "rgba(37, 99, 235, 0.1)"
+                : "rgba(22, 163, 74, 0.1)";
+            },
+          },
         },
         buildChartDataset(
           "Your balance",
@@ -365,10 +446,10 @@ function updateChart(projection, actualTrack) {
               }
 
               const monthlyIncome = context.dataset.monthlyIncomes[context.dataIndex];
-              const lines = [`${context.dataset.label}: ${formatEurDetailed(context.parsed.y)}`];
+              const lines = [`${context.dataset.label}: ${formatCurrencyDetailed(context.parsed.y)}`];
 
               if (monthlyIncome !== null && monthlyIncome !== undefined) {
-                lines.push(`Monthly income: ${formatEurDetailed(monthlyIncome)}`);
+                lines.push(`Monthly income: ${formatCurrencyDetailed(monthlyIncome)}`);
               }
 
               return lines;
@@ -389,7 +470,7 @@ function updateChart(projection, actualTrack) {
         y: {
           ticks: {
             callback(value) {
-              return formatCompactEur(value);
+              return formatCompactCurrency(value);
             },
           },
         },
@@ -399,10 +480,13 @@ function updateChart(projection, actualTrack) {
 }
 
 function updateSummary(projection) {
-  finalBalanceEl.textContent = formatEurDetailed(projection.finalBalance);
-  totalContributedEl.textContent = formatEurDetailed(projection.totalContributions);
-  totalTaxPaidEl.textContent = formatEurDetailed(projection.totalTaxPaid);
-  netGainEl.textContent = formatEurDetailed(projection.netGain);
+  finalBalanceEl.textContent = formatCurrencyDetailed(projection.finalBalance);
+  monthlyIncomeAfterInvestingEl.textContent = formatCurrencyDetailed(
+    projection.postInvestmentMonthlyIncome
+  );
+  totalContributedEl.textContent = formatCurrencyDetailed(projection.totalContributions);
+  totalTaxPaidEl.textContent = formatCurrencyDetailed(projection.totalTaxPaid);
+  netGainEl.textContent = formatCurrencyDetailed(projection.netGain);
 }
 
 function clampToInput(value, input) {
@@ -432,6 +516,11 @@ function loadFromCache() {
 
     let loaded = false;
 
+    if (CURRENCIES.includes(cached.currency)) {
+      setSelectedCurrency(cached.currency);
+      loaded = true;
+    }
+
     for (const { key, input, type } of inputFields) {
       if (cached[key] === undefined) continue;
 
@@ -455,7 +544,7 @@ function loadFromCache() {
 }
 
 function saveToCache() {
-  const settings = {};
+  const settings = { currency: getSelectedCurrency() };
   for (const { key, input } of inputFields) {
     settings[key] = input.value;
   }
@@ -475,6 +564,7 @@ function recalculate() {
   if (!params) {
     showPlaceholder(true);
     finalBalanceEl.textContent = "—";
+    monthlyIncomeAfterInvestingEl.textContent = "—";
     totalContributedEl.textContent = "—";
     totalTaxPaidEl.textContent = "—";
     netGainEl.textContent = "—";
@@ -495,6 +585,13 @@ function setDefaultStartDate() {
   const day = String(today.getDate()).padStart(2, "0");
   startDateInput.value = `${year}-${month}-${day}`;
 }
+
+currencyOptions.forEach((option) => {
+  option.addEventListener("click", () => {
+    setSelectedCurrency(option.dataset.currency);
+    recalculate();
+  });
+});
 
 if (!loadFromCache() || !startDateInput.value) {
   setDefaultStartDate();

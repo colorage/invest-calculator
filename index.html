@@ -75,6 +75,13 @@
         </div>
       </dl>
     </section><section class="card output" aria-label="Projection results">
+      <div id="chartPlaceholder" class="chart-placeholder hidden" role="status">
+        Enter valid parameters to see your projection.
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="balanceChart" aria-label="Projected balance over time"></canvas>
+      </div>
+
       <div class="summary summary--equation" role="group" aria-label="Balance breakdown: contributed plus gained minus tax equals final">
         <div class="summary-item">
           <span class="summary-label">Contributed</span>
@@ -95,13 +102,6 @@
           <span class="summary-label">Final</span>
           <span class="summary-value" id="finalBalance">—</span>
         </div>
-      </div>
-
-      <div id="chartPlaceholder" class="chart-placeholder hidden" role="status">
-        Enter valid parameters to see your projection.
-      </div>
-      <div class="chart-wrapper">
-        <canvas id="balanceChart" aria-label="Projected balance over time"></canvas>
       </div>
     </section></div>
   </main>

@@ -185,7 +185,6 @@ input[type="range"]:focus {
   border-radius: 8px;
   color: var(--text-muted);
   font-size: 0.95rem;
-  margin-bottom: 1.25rem;
 }
 
 .chart-placeholder.hidden {
@@ -213,6 +212,7 @@ input[type="range"]:focus {
   justify-content: center;
   gap: 0.5rem 0.75rem;
   grid-template-columns: unset;
+  margin: 1.25rem 0 0;
 }
 
 .summary--controls {

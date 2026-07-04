@@ -345,6 +345,7 @@ input[type="range"]:focus {
 @media (min-width: 640px) {
   .layout {
     grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+    align-items: stretch;
   }
 
   .layout > .controls {
@@ -353,6 +354,15 @@ input[type="range"]:focus {
 
   .layout > .output {
     grid-column: 2;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .output .chart-wrapper,
+  .output .chart-placeholder {
+    flex: 1;
+    min-height: 320px;
+    height: auto;
   }
 }
 

@@ -250,22 +250,13 @@ function calculateProjection(params) {
   const finalBalance = state.balance;
   const totalContributions = state.totalContributions;
   const totalTaxPaidAtEnd = state.totalTaxPaid;
-  let postInvestmentMonthlyIncome = 0;
-  const postInvestMonths = years * 12;
-
-  for (let month = 0; month < postInvestMonths; month += 1) {
-    state = applyMonthStep(state, totalMonths + month, 0, monthlyGrowthRate, taxRate);
-
-    const pointDate = addMonths(startDate, totalMonths + month);
-    if (month === 0) {
-      postInvestmentMonthlyIncome = state.monthlyIncome;
-    }
-    dataPoints.push({
-      date: pointDate,
-      balance: state.balance,
-      monthlyIncome: state.monthlyIncome,
-    });
-  }
+  const postInvestmentMonthlyIncome = applyMonthStep(
+    state,
+    totalMonths,
+    0,
+    monthlyGrowthRate,
+    taxRate
+  ).monthlyIncome;
 
   return {
     dataPoints,

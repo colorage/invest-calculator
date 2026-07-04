@@ -418,11 +418,7 @@ function getChartOptions() {
     },
     plugins: {
       legend: {
-        display: true,
-        labels: {
-          usePointStyle: true,
-          boxWidth: 8,
-        },
+        display: false,
       },
       tooltip: {
         callbacks: {

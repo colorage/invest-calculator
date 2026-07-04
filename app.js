@@ -15,12 +15,17 @@ const monthLabelFormatter = new Intl.DateTimeFormat("en", {
   year: "numeric",
 });
 
+const PLAN_COLOR = "#2563eb";
+const ACTUAL_COLOR = "#dc2626";
+
 const startDateInput = document.getElementById("startDate");
+const currentBalanceInput = document.getElementById("currentBalance");
 const monthlyBudgetInput = document.getElementById("monthlyBudget");
 const yearlyGrowthInput = document.getElementById("yearlyGrowth");
 const yearlyTaxInput = document.getElementById("yearlyTax");
 const yearsToInvestInput = document.getElementById("yearsToInvest");
 
+const currentBalanceValue = document.getElementById("currentBalanceValue");
 const monthlyBudgetValue = document.getElementById("monthlyBudgetValue");
 const yearlyGrowthValue = document.getElementById("yearlyGrowthValue");
 const yearlyTaxValue = document.getElementById("yearlyTaxValue");
@@ -41,6 +46,7 @@ const STORAGE_KEY = "investCalculatorSettings";
 
 const inputFields = [
   { key: "startDate", input: startDateInput, type: "date" },
+  { key: "currentBalance", input: currentBalanceInput, type: "number" },
   { key: "monthlyBudget", input: monthlyBudgetInput, type: "number" },
   { key: "yearlyGrowth", input: yearlyGrowthInput, type: "number" },
   { key: "yearlyTax", input: yearlyTaxInput, type: "number" },
@@ -71,6 +77,76 @@ function addMonths(date, months) {
   return result;
 }
 
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function createProjectionState(initialBalance = 0) {
+  return {
+    balance: initialBalance,
+    yearStartBalance: initialBalance,
+    yearContributions: 0,
+    totalContributions: 0,
+    totalTaxPaid: 0,
+  };
+}
+
+function applyMonthStep(state, monthIndex, monthlyBudget, monthlyGrowthRate, taxRate) {
+  let balance = state.balance + monthlyBudget;
+  const yearContributions = state.yearContributions + monthlyBudget;
+  const totalContributions = state.totalContributions + monthlyBudget;
+
+  balance *= 1 + monthlyGrowthRate;
+
+  let monthlyIncome = balance * monthlyGrowthRate;
+  let totalTaxPaid = state.totalTaxPaid;
+  let yearStartBalance = state.yearStartBalance;
+
+  if ((monthIndex + 1) % 12 === 0) {
+    const gains = balance - yearStartBalance - yearContributions;
+    if (gains > 0) {
+      const tax = gains * taxRate;
+      totalTaxPaid += tax;
+      balance -= tax;
+      monthlyIncome = balance * monthlyGrowthRate;
+    }
+    yearStartBalance = balance;
+    return {
+      balance,
+      yearStartBalance,
+      yearContributions: 0,
+      totalContributions,
+      totalTaxPaid,
+      monthlyIncome,
+    };
+  }
+
+  return {
+    balance,
+    yearStartBalance,
+    yearContributions,
+    totalContributions,
+    totalTaxPaid,
+    monthlyIncome,
+  };
+}
+
+function findTodayIndex(startDate, totalMonths) {
+  const today = startOfMonth(new Date());
+  let todayIndex = -1;
+
+  for (let month = 0; month < totalMonths; month += 1) {
+    const pointDate = startOfMonth(addMonths(startDate, month));
+    if (pointDate <= today) {
+      todayIndex = month;
+    } else {
+      break;
+    }
+  }
+
+  return todayIndex;
+}
+
 function calculateProjection(params) {
   const {
     startDate,
@@ -84,53 +160,94 @@ function calculateProjection(params) {
   const monthlyGrowthRate = yearlyGrowthPercent / 100 / 12;
   const taxRate = yearlyTaxPercent / 100;
 
-  let balance = 0;
-  let yearStartBalance = 0;
-  let yearContributions = 0;
-  let totalContributions = 0;
-  let totalTaxPaid = 0;
-
+  let state = createProjectionState(0);
   const dataPoints = [];
 
   for (let month = 0; month < totalMonths; month += 1) {
-    balance += monthlyBudget;
-    yearContributions += monthlyBudget;
-    totalContributions += monthlyBudget;
-
-    balance *= 1 + monthlyGrowthRate;
+    state = applyMonthStep(state, month, monthlyBudget, monthlyGrowthRate, taxRate);
 
     const pointDate = addMonths(startDate, month);
     dataPoints.push({
       date: pointDate,
-      balance,
-      monthlyIncome: balance * monthlyGrowthRate,
+      balance: state.balance,
+      monthlyIncome: state.monthlyIncome,
     });
-
-    if ((month + 1) % 12 === 0) {
-      const gains = balance - yearStartBalance - yearContributions;
-      if (gains > 0) {
-        const tax = gains * taxRate;
-        totalTaxPaid += tax;
-        balance -= tax;
-        const lastPoint = dataPoints[dataPoints.length - 1];
-        lastPoint.balance = balance;
-        lastPoint.monthlyIncome = balance * monthlyGrowthRate;
-      }
-      yearStartBalance = balance;
-      yearContributions = 0;
-    }
   }
 
   return {
     dataPoints,
-    finalBalance: balance,
-    totalContributions,
-    totalTaxPaid,
-    netGain: balance - totalContributions,
+    finalBalance: state.balance,
+    totalContributions: state.totalContributions,
+    totalTaxPaid: state.totalTaxPaid,
+    netGain: state.balance - state.totalContributions,
+  };
+}
+
+function calculateActualTrack(params) {
+  const {
+    startDate,
+    monthlyBudget,
+    yearlyGrowthPercent,
+    yearlyTaxPercent,
+    years,
+    currentBalance,
+  } = params;
+
+  const totalMonths = years * 12;
+  const monthlyGrowthRate = yearlyGrowthPercent / 100 / 12;
+  const taxRate = yearlyTaxPercent / 100;
+  const todayIndex = findTodayIndex(startDate, totalMonths);
+
+  const actualSolid = Array(totalMonths).fill(null);
+  const actualDashed = Array(totalMonths).fill(null);
+  const monthlyIncomesSolid = Array(totalMonths).fill(null);
+  const monthlyIncomesDashed = Array(totalMonths).fill(null);
+
+  let state = createProjectionState(0);
+
+  if (todayIndex >= 0) {
+    for (let month = 0; month < todayIndex; month += 1) {
+      state = applyMonthStep(state, month, monthlyBudget, monthlyGrowthRate, taxRate);
+      actualSolid[month] = state.balance;
+      monthlyIncomesSolid[month] = state.monthlyIncome;
+    }
+
+    const anchoredIncome = currentBalance * monthlyGrowthRate;
+    actualSolid[todayIndex] = currentBalance;
+    monthlyIncomesSolid[todayIndex] = anchoredIncome;
+    actualDashed[todayIndex] = currentBalance;
+    monthlyIncomesDashed[todayIndex] = anchoredIncome;
+  }
+
+  const forwardStart = todayIndex >= 0 ? todayIndex + 1 : 0;
+  let forwardState =
+    todayIndex > 0
+      ? { ...state, balance: currentBalance }
+      : createProjectionState(currentBalance);
+
+  for (let month = forwardStart; month < totalMonths; month += 1) {
+    forwardState = applyMonthStep(
+      forwardState,
+      month,
+      monthlyBudget,
+      monthlyGrowthRate,
+      taxRate
+    );
+    actualDashed[month] = forwardState.balance;
+    monthlyIncomesDashed[month] = forwardState.monthlyIncome;
+  }
+
+  return {
+    actualSolid,
+    actualDashed,
+    monthlyIncomesSolid,
+    monthlyIncomesDashed,
+    todayIndex,
   };
 }
 
 function updateReadouts() {
+  currentBalanceValue.textContent = formatEur(Number(currentBalanceInput.value));
   monthlyBudgetValue.textContent = formatEur(Number(monthlyBudgetInput.value));
   yearlyGrowthValue.textContent = `${Number(yearlyGrowthInput.value).toFixed(1)}%`;
   yearlyTaxValue.textContent = `${Number(yearlyTaxInput.value)}%`;
@@ -148,6 +265,7 @@ function getParams() {
 
   return {
     startDate,
+    currentBalance: Number(currentBalanceInput.value),
     monthlyBudget: Number(monthlyBudgetInput.value),
     yearlyGrowthPercent: Number(yearlyGrowthInput.value),
     yearlyTaxPercent: Number(yearlyTaxInput.value),
@@ -160,17 +278,37 @@ function showPlaceholder(show) {
   chartWrapper.classList.toggle("hidden", show);
 }
 
-function updateChart(projection) {
+function buildChartDataset(label, data, monthlyIncomes, options = {}) {
+  return {
+    label,
+    data,
+    monthlyIncomes,
+    borderColor: ACTUAL_COLOR,
+    backgroundColor: "transparent",
+    fill: false,
+    tension: 0.2,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    borderWidth: 2,
+    ...options,
+  };
+}
+
+function updateChart(projection, actualTrack) {
   const labels = projection.dataPoints.map((point) =>
     monthLabelFormatter.format(point.date)
   );
-  const values = projection.dataPoints.map((point) => point.balance);
-  const monthlyIncomes = projection.dataPoints.map((point) => point.monthlyIncome);
+  const planValues = projection.dataPoints.map((point) => point.balance);
+  const planMonthlyIncomes = projection.dataPoints.map((point) => point.monthlyIncome);
 
   if (balanceChart) {
     balanceChart.data.labels = labels;
-    balanceChart.data.datasets[0].data = values;
-    balanceChart.data.datasets[0].monthlyIncomes = monthlyIncomes;
+    balanceChart.data.datasets[0].data = planValues;
+    balanceChart.data.datasets[0].monthlyIncomes = planMonthlyIncomes;
+    balanceChart.data.datasets[1].data = actualTrack.actualSolid;
+    balanceChart.data.datasets[1].monthlyIncomes = actualTrack.monthlyIncomesSolid;
+    balanceChart.data.datasets[2].data = actualTrack.actualDashed;
+    balanceChart.data.datasets[2].monthlyIncomes = actualTrack.monthlyIncomesDashed;
     balanceChart.update();
     return;
   }
@@ -182,15 +320,26 @@ function updateChart(projection) {
       datasets: [
         {
           label: "Projected balance",
-          data: values,
-          monthlyIncomes,
-          borderColor: "#2563eb",
+          data: planValues,
+          monthlyIncomes: planMonthlyIncomes,
+          borderColor: PLAN_COLOR,
           backgroundColor: "rgba(37, 99, 235, 0.1)",
           fill: true,
           tension: 0.2,
           pointRadius: 0,
           pointHoverRadius: 4,
         },
+        buildChartDataset(
+          "Your balance",
+          actualTrack.actualSolid,
+          actualTrack.monthlyIncomesSolid
+        ),
+        buildChartDataset(
+          "Predicted balance",
+          actualTrack.actualDashed,
+          actualTrack.monthlyIncomesDashed,
+          { borderDash: [6, 4] }
+        ),
       ],
     },
     options: {
@@ -202,16 +351,27 @@ function updateChart(projection) {
       },
       plugins: {
         legend: {
-          display: false,
+          display: true,
+          labels: {
+            usePointStyle: true,
+            boxWidth: 8,
+          },
         },
         tooltip: {
           callbacks: {
             label(context) {
+              if (context.parsed.y === null) {
+                return null;
+              }
+
               const monthlyIncome = context.dataset.monthlyIncomes[context.dataIndex];
-              return [
-                `Balance: ${formatEurDetailed(context.parsed.y)}`,
-                `Monthly income: ${formatEurDetailed(monthlyIncome)}`,
-              ];
+              const lines = [`${context.dataset.label}: ${formatEurDetailed(context.parsed.y)}`];
+
+              if (monthlyIncome !== null && monthlyIncome !== undefined) {
+                lines.push(`Monthly income: ${formatEurDetailed(monthlyIncome)}`);
+              }
+
+              return lines;
             },
           },
         },
@@ -323,7 +483,8 @@ function recalculate() {
 
   showPlaceholder(false);
   const projection = calculateProjection(params);
-  updateChart(projection);
+  const actualTrack = calculateActualTrack(params);
+  updateChart(projection, actualTrack);
   updateSummary(projection);
 }
 

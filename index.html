@@ -21,6 +21,14 @@
 
       <div class="control-group">
         <div class="control-label">
+          <label for="currentBalance">Current balance</label>
+          <span id="currentBalanceValue" class="value-readout" aria-live="polite">€0</span>
+        </div>
+        <input type="range" id="currentBalance" min="0" max="500000" step="500" value="0">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
           <label for="monthlyBudget">Monthly budget</label>
           <span id="monthlyBudgetValue" class="value-readout" aria-live="polite">€500</span>
         </div>

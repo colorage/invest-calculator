@@ -68,24 +68,27 @@
         <input type="range" id="yearsToInvest" min="1" max="40" step="1" value="10">
       </div>
     </section><section class="card output" aria-label="Projection results">
-      <dl class="summary">
+      <div class="summary summary--equation" role="group" aria-label="Balance breakdown: contributed plus gain minus tax equals final balance">
         <div class="summary-item">
-          <dt>Total contributed</dt>
-          <dd id="totalContributed">—</dd>
+          <span class="summary-label">Total contributed</span>
+          <span class="summary-value" id="totalContributed">—</span>
         </div>
+        <span class="summary-operator" aria-hidden="true">+</span>
         <div class="summary-item summary-item--gain">
-          <dt>Net gain</dt>
-          <dd id="netGain">—</dd>
+          <span class="summary-label">Net gain</span>
+          <span class="summary-value" id="netGain">—</span>
         </div>
+        <span class="summary-operator" aria-hidden="true">−</span>
         <div class="summary-item summary-item--tax">
-          <dt>Total tax paid</dt>
-          <dd id="totalTaxPaid">—</dd>
+          <span class="summary-label">Total tax paid</span>
+          <span class="summary-value" id="totalTaxPaid">—</span>
         </div>
+        <span class="summary-operator summary-operator--equals" aria-hidden="true">=</span>
         <div class="summary-item summary-item--final">
-          <dt>Final balance</dt>
-          <dd id="finalBalance">—</dd>
+          <span class="summary-label">Final balance</span>
+          <span class="summary-value" id="finalBalance">—</span>
         </div>
-      </dl>
+      </div>
 
       <div id="chartPlaceholder" class="chart-placeholder hidden" role="status">
         Enter valid parameters to see your projection.

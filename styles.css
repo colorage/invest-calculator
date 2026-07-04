@@ -202,6 +202,15 @@ input[type="range"]:focus {
   border-radius: 8px;
 }
 
+.summary--equation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  grid-template-columns: unset;
+}
+
 .summary--below-chart {
   margin: 1.25rem 0 0;
 }
@@ -210,8 +219,10 @@ input[type="range"]:focus {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
 }
 
+.summary-label,
 .summary dt {
   font-size: 0.65rem;
   font-weight: 500;
@@ -220,6 +231,7 @@ input[type="range"]:focus {
   letter-spacing: 0.04em;
 }
 
+.summary-value,
 .summary dd {
   margin: 0;
   font-size: 1.125rem;
@@ -227,14 +239,30 @@ input[type="range"]:focus {
   font-variant-numeric: tabular-nums;
 }
 
+.summary-operator {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-muted);
+  padding-bottom: 0.2rem;
+}
+
+.summary-operator--equals {
+  color: var(--text);
+}
+
+.summary-item--final .summary-value,
 .summary-item--final dd {
   color: var(--accent);
 }
 
+.summary-item--tax .summary-value,
 .summary-item--tax dd {
   color: var(--actual);
 }
 
+.summary-item--gain .summary-value,
 .summary-item--gain dd {
   color: #16a34a;
 }
@@ -262,7 +290,15 @@ input[type="range"]:focus {
     font-size: 1.5rem;
   }
 
-  .summary {
+  .summary:not(.summary--equation) {
     grid-template-columns: 1fr;
+  }
+
+  .summary--equation {
+    gap: 0.75rem 0.5rem;
+  }
+
+  .summary-operator {
+    font-size: 1.1rem;
   }
 }

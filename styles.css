@@ -202,6 +202,10 @@ input[type="range"]:focus {
   border-radius: 8px;
 }
 
+.summary--below-chart {
+  margin: 1.25rem 0 0;
+}
+
 .summary-item {
   display: flex;
   flex-direction: column;

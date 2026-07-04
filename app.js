@@ -72,7 +72,7 @@ let selectedCurrency = "EUR";
 const STORAGE_KEY = "investCalculatorSettings";
 
 const inputFields = [
-  { key: "startDate", input: startDateInput, type: "date" },
+  { key: "startDate", input: startDateInput, type: "month" },
   { key: "currentBalance", input: currentBalanceInput, type: "number" },
   { key: "monthlyBudget", input: monthlyBudgetInput, type: "number" },
   { key: "yearlyGrowth", input: yearlyGrowthInput, type: "number" },
@@ -322,10 +322,10 @@ function updateReadouts() {
 }
 
 function getParams() {
-  const startDate = new Date(startDateInput.value);
+  const startDate = parseStartMonth(startDateInput.value);
   const years = Number(yearsToInvestInput.value);
 
-  if (!startDateInput.value || Number.isNaN(startDate.getTime()) || years <= 0) {
+  if (!startDate || years <= 0) {
     return null;
   }
 
@@ -500,10 +500,20 @@ function clampToInput(value, input) {
   return min + steps * step;
 }
 
-function isValidDateString(value) {
-  if (!value) return false;
-  const date = new Date(value);
-  return !Number.isNaN(date.getTime());
+function parseStartMonth(value) {
+  if (!value) return null;
+  const match = /^(\d{4})-(\d{2})$/.exec(value);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return null;
+
+  return new Date(year, month - 1, 1);
+}
+
+function isValidMonthString(value) {
+  return parseStartMonth(value) !== null;
 }
 
 function loadFromCache() {
@@ -524,9 +534,13 @@ function loadFromCache() {
     for (const { key, input, type } of inputFields) {
       if (cached[key] === undefined) continue;
 
-      if (type === "date") {
-        if (!isValidDateString(cached[key])) continue;
-        input.value = cached[key];
+      if (type === "month") {
+        let monthValue = cached[key];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(monthValue)) {
+          monthValue = monthValue.slice(0, 7);
+        }
+        if (!isValidMonthString(monthValue)) continue;
+        input.value = monthValue;
         loaded = true;
         continue;
       }
@@ -582,8 +596,7 @@ function setDefaultStartDate() {
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  startDateInput.value = `${year}-${month}-${day}`;
+  startDateInput.value = `${year}-${month}`;
 }
 
 currencyOptions.forEach((option) => {

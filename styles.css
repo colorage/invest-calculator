@@ -36,14 +36,24 @@ body {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(0, 1.5fr);
+  grid-template-columns: 1fr;
   gap: 1.25rem;
   align-items: start;
 }
 
 .header {
   margin-bottom: 1.5rem;
-  text-align: center;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.header-text {
+  min-width: 0;
 }
 
 .header h1 {
@@ -57,6 +67,22 @@ body {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.95rem;
+}
+
+.header-currency {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.currency-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .card {
@@ -102,7 +128,7 @@ label {
   white-space: nowrap;
 }
 
-input[type="date"] {
+input[type="month"] {
   width: 100%;
   padding: 0.625rem 0.75rem;
   border: 1px solid var(--border);
@@ -112,7 +138,7 @@ input[type="date"] {
   background: var(--card);
 }
 
-input[type="date"]:focus {
+input[type="month"]:focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -224,9 +250,26 @@ input[type="range"]:focus {
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 640px) {
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  }
+
+  .layout > .controls {
+    grid-column: 1;
+  }
+
+  .layout > .output {
+    grid-column: 2;
+  }
+
+  .header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-currency {
+    align-items: stretch;
   }
 }
 

@@ -9,24 +9,26 @@
 <body>
   <main class="container">
     <header class="header">
-      <h1>Investment Calculator</h1>
-      <p class="subtitle">Project your portfolio growth with monthly contributions</p>
-    </header>
-
-    <div class="layout">
-    <section class="card controls" aria-label="Investment parameters">
-      <div class="control-group">
-        <label id="currencyLabel">Currency</label>
-        <div class="currency-switcher" role="radiogroup" aria-labelledby="currencyLabel">
-          <button type="button" class="currency-option" data-currency="PLN" role="radio" aria-checked="false">PLN</button>
-          <button type="button" class="currency-option is-active" data-currency="EUR" role="radio" aria-checked="true">EUR</button>
-          <button type="button" class="currency-option" data-currency="USD" role="radio" aria-checked="false">USD</button>
+      <div class="header-row">
+        <div class="header-text">
+          <h1>Investment Calculator</h1>
+          <p class="subtitle">Project your portfolio growth with monthly contributions</p>
+        </div>
+        <div class="header-currency">
+          <span id="currencyLabel" class="currency-label">Currency</span>
+          <div class="currency-switcher" role="radiogroup" aria-labelledby="currencyLabel">
+            <button type="button" class="currency-option" data-currency="PLN" role="radio" aria-checked="false">PLN</button>
+            <button type="button" class="currency-option is-active" data-currency="EUR" role="radio" aria-checked="true">EUR</button>
+            <button type="button" class="currency-option" data-currency="USD" role="radio" aria-checked="false">USD</button>
+          </div>
         </div>
       </div>
+    </header>
 
+    <div class="layout"><section class="card controls" aria-label="Investment parameters">
       <div class="control-group">
         <label for="startDate">Start date</label>
-        <input type="date" id="startDate" name="startDate">
+        <input type="month" id="startDate" name="startDate">
       </div>
 
       <div class="control-group">
@@ -42,7 +44,7 @@
           <label for="monthlyBudget">Monthly budget</label>
           <span id="monthlyBudgetValue" class="value-readout" aria-live="polite">€500</span>
         </div>
-        <input type="range" id="monthlyBudget" min="0" max="5000" step="50" value="500">
+        <input type="range" id="monthlyBudget" min="0" max="10000" step="50" value="500">
       </div>
 
       <div class="control-group">
@@ -68,9 +70,7 @@
         </div>
         <input type="range" id="yearsToInvest" min="1" max="40" step="1" value="10">
       </div>
-    </section>
-
-    <section class="card output" aria-label="Projection results">
+    </section><section class="card output" aria-label="Projection results">
       <div id="chartPlaceholder" class="chart-placeholder hidden" role="status">
         Enter valid parameters to see your projection.
       </div>
@@ -100,8 +100,7 @@
           <dd id="netGain">—</dd>
         </div>
       </dl>
-    </section>
-    </div>
+    </section></div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>

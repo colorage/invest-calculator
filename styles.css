@@ -172,6 +172,10 @@ input[type="range"]:focus {
   width: 100%;
 }
 
+.chart-wrapper ul {
+  display: none !important;
+}
+
 .chart-placeholder {
   display: flex;
   align-items: center;
